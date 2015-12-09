@@ -9,13 +9,12 @@
 import Foundation
 import CoreData
 
-public func contextForCurrentThread() throws -> NSManagedObjectContext {
-    if let stack = CoreDataStack.mainStack {
-        return stack.contextForCurrentThread()
+public func contextForCurrentThread() -> NSManagedObjectContext {
+    if CoreDataStack.mainStack == nil {
+        print("CoreDataStack.mainStack has not been set to a valid stack instance.")
     }
-    else {
-        throw NSError(domain: "com.cjoseph.coredatastack", code: 0, userInfo: [NSLocalizedDescriptionKey: "CoreDataStack.mainStack has not been set to a valid stack instance."])
-    }
+    
+    return CoreDataStack.mainStack!.contextForCurrentThread()
 }
 
 public class CoreDataStack: NSObject {
