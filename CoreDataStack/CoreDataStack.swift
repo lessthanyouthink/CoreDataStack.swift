@@ -21,14 +21,55 @@ public func contextForCurrentThread() throws -> NSManagedObjectContext {
 public class CoreDataStack: NSObject {
     public static var mainStack: CoreDataStack?
     
-    lazy public private(set) var managedObjectContext: NSManagedObjectContext = {
+    public let managedObjectContext: NSManagedObjectContext
+    let persistentStoreCoordinator: NSPersistentStoreCoordinator
+    
+    private var _threadDictionariesWithManagedObjectContexts = Set<NSMutableDictionary>()
+    private let _lockQueue = dispatch_queue_create("com.cjoseph.coredatastack", DISPATCH_QUEUE_SERIAL)
+    
+    public convenience init(modelURL: NSURL, storeURL: NSURL?, storeType: String = NSSQLiteStoreType, eraseStoreOnError: Bool = false) {
+        let model = NSManagedObjectModel.init(contentsOfURL: modelURL)
+        
+        let coordinator = NSPersistentStoreCoordinator.init(managedObjectModel: model!)
+        do {
+            try coordinator.addPersistentStoreWithType(storeType, configuration: nil, URL: storeURL, options: nil)
+        }
+        catch {
+            var dict = [NSLocalizedDescriptionKey: "Failed to initialize the application's saved data"]
+            dict[NSLocalizedFailureReasonErrorKey] = "There was an error creating or loading the application's saved data."
+            dict[NSUnderlyingErrorKey] = "\(error)"
+            
+            if eraseStoreOnError && (storeURL != nil) {
+                print("Error: \(dict)\n\n Now deleting and recreating the store.")
+            
+                do {
+                    try NSFileManager.defaultManager().removeItemAtURL(storeURL!)
+                    try coordinator.addPersistentStoreWithType(storeType, configuration: nil, URL: storeURL, options: nil)
+                }
+                    
+                catch {
+                    print("Error, aborting: \(error)")
+                    abort()
+                }
+            }
+            else {
+                print("Error, aborting: \(error)")
+                abort()
+            }
+        }
+        
+        self.init(persistentStoreCoordinator: coordinator)
+    }
+    
+    public init(persistentStoreCoordinator: NSPersistentStoreCoordinator) {
+        self.persistentStoreCoordinator = persistentStoreCoordinator
+        
         var context: NSManagedObjectContext?
         
         let createContext = {
             context = NSManagedObjectContext.init(concurrencyType: .MainQueueConcurrencyType)
-            context?.persistentStoreCoordinator = self.persistentStoreCoordinator
+            context?.persistentStoreCoordinator = persistentStoreCoordinator
             context?.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-            self.storeContextForCurrentThread(context!)
         }
         
         if NSThread.isMainThread() {
@@ -37,51 +78,12 @@ public class CoreDataStack: NSObject {
         else {
             dispatch_sync(dispatch_get_main_queue(), createContext)
         }
+
+        managedObjectContext = context!
         
-        return context!
-    }()
-    
-    lazy var managedObjectModel: NSManagedObjectModel = {
-       NSManagedObjectModel.init(contentsOfURL: self._modelURL)!
-    }()
-    
-    lazy var persistentStoreCoordinator: NSPersistentStoreCoordinator = {
-        var coordinator: NSPersistentStoreCoordinator = NSPersistentStoreCoordinator.init(managedObjectModel: self.managedObjectModel)
-        do {
-            try coordinator.addPersistentStoreWithType(NSSQLiteStoreType, configuration: nil, URL: self._storeURL, options: nil)
-        }
-        catch {
-            var dict = [NSLocalizedDescriptionKey: "Failed to initialize the application's saved data"]
-            dict[NSLocalizedFailureReasonErrorKey] = "There was an error creating or loading the application's saved data."
-            dict[NSUnderlyingErrorKey] = "\(error)"
-            print("Error: \(dict)\n\n Now deleting and recreating the database.")
-            
-            do {
-                try NSFileManager.defaultManager().removeItemAtURL(self._storeURL)
-                try coordinator.addPersistentStoreWithType(NSSQLiteStoreType, configuration: nil, URL: self._storeURL, options: nil)
-            }
-            
-            catch {
-                print("Error, aborting: \(error)")
-                abort()
-            }
-        }
-        
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "managedObjectContextUpdated:", name: NSManagedObjectContextDidSaveNotification, object: nil)
-        
-        return coordinator
-    }()
-    
-    private var _modelURL: NSURL
-    private var _storeURL: NSURL
-    private var _threadDictionariesWithManagedObjectContexts = Set<NSMutableDictionary>()
-    private let _lockQueue = dispatch_queue_create("com.cjoseph.coredatastack", DISPATCH_QUEUE_SERIAL)
-    
-    public init(modelURL: NSURL, storeURL: NSURL) {
-        _modelURL = modelURL
-        _storeURL = storeURL
         super.init()
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "threadWillExit:", name: NSThreadWillExitNotification, object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "managedObjectContextUpdated:", name: NSManagedObjectContextDidSaveNotification, object: nil)
     }
     
     deinit {
@@ -93,21 +95,19 @@ public class CoreDataStack: NSObject {
     }
     
     public func contextForCurrentThread() -> NSManagedObjectContext {
-        var context = NSThread.currentThread().threadDictionary[self.description] as? NSManagedObjectContext
-        
-        if context != nil {
-            return context!
-        }
-        else if NSThread.isMainThread() {
+        if NSThread.isMainThread() {
             return managedObjectContext
         }
+        else if let context = NSThread.currentThread().threadDictionary[self.description] as? NSManagedObjectContext {
+            return context
+        }
         else {
-            context = NSManagedObjectContext.init(concurrencyType: .PrivateQueueConcurrencyType)
-            context?.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-            context?.persistentStoreCoordinator = persistentStoreCoordinator
-            self.storeContextForCurrentThread(context!)
+            let context = NSManagedObjectContext.init(concurrencyType: .PrivateQueueConcurrencyType)
+            context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+            context.persistentStoreCoordinator = persistentStoreCoordinator
+            self.storeContextForCurrentThread(context)
             
-            return context!
+            return context
         }
     }
     
