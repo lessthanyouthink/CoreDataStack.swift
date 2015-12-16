@@ -119,19 +119,13 @@ public class CoreDataStack: NSObject {
     }
     
     @objc private func managedObjectContextUpdated(notification: NSNotification) {
-        if let context = notification.object as? NSManagedObjectContext {
-            if context === managedObjectContext {
-                return
-            }
-            
-            if context.persistentStoreCoordinator != persistentStoreCoordinator {
-                return
-            }
-            
-            dispatch_async(dispatch_get_main_queue(), {
-                self.managedObjectContext.mergeChangesFromContextDidSaveNotification(notification)
-            })
-        }
+        guard let context = notification.object as? NSManagedObjectContext else { return }
+        guard context !== managedObjectContext else { return }
+        guard context.persistentStoreCoordinator === persistentStoreCoordinator else { return }
+        
+        dispatch_async(dispatch_get_main_queue(), {
+            self.managedObjectContext.mergeChangesFromContextDidSaveNotification(notification)
+        })
     }
     
     @objc private func threadWillExit(notification: NSNotification) {
