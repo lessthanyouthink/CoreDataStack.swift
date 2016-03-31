@@ -7,10 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		568A348A1CAD8B070020541C /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 568A34891CAD8B070020541C /* CoreData.framework */; };
 		568DE2CF1C121C0A00DD868F /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 568DE2CE1C121C0A00DD868F /* CoreDataStack.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		568A34891CAD8B070020541C /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		568DE2C31C121AD000DD868F /* CoreDataStack.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CoreDataStack.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		568DE2C81C121AD000DD868F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		568DE2CE1C121C0A00DD868F /* CoreDataStack.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
@@ -21,6 +23,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				568A348A1CAD8B070020541C /* CoreData.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -30,6 +33,7 @@
 		568DE2B91C121AD000DD868F = {
 			isa = PBXGroup;
 			children = (
+				568A34891CAD8B070020541C /* CoreData.framework */,
 				568DE2C51C121AD000DD868F /* CoreDataStack */,
 				568DE2C41C121AD000DD868F /* Products */,
 			);
@@ -279,6 +283,7 @@
 				568DE2CD1C121AD000DD868F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
