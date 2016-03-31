@@ -1,4 +1,4 @@
-# CoreDataStack.swift
+# CoreDataStack.swift [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
 
 A simple Swift module for managing your Core Data stack and keeping track of different threads’ NSManagedContexts. Simply initialize a CoreDataStack instance with the URLs to your local model and store files, set it as the main stack, and use ```contextForCurrentThread()``` as needed.
 
