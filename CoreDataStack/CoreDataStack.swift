@@ -81,8 +81,8 @@ public class CoreDataStack: NSObject {
         managedObjectContext = context!
         
         super.init()
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "threadWillExit:", name: NSThreadWillExitNotification, object: nil)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "managedObjectContextUpdated:", name: NSManagedObjectContextDidSaveNotification, object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(threadWillExit(_:)), name: NSThreadWillExitNotification, object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(managedObjectContextUpdated(_:)), name: NSManagedObjectContextDidSaveNotification, object: nil)
     }
     
     deinit {
